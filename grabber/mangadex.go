@@ -161,6 +161,10 @@ func (m Mangadex) FetchChapter(f Filterable) (*Chapter, error) {
 	if err != nil {
 		return nil, err
 	}
+	// this runs once per chapter, so leaking the body here leaked one
+	// connection per chapter for the whole bulk run
+	defer rbody.Close()
+
 	// parse json body
 	body := mangadexPagesFeed{}
 	if err = json.NewDecoder(rbody).Decode(&body); err != nil {

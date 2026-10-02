@@ -47,6 +47,9 @@ func (t *Tcb) Test() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// same as PlainHTML.Test(): without this the response body is never
+	// closed and its connection leaks for the rest of the run
+	defer rbody.Close()
 
 	body, err := goquery.NewDocumentFromReader(rbody)
 	if err != nil {

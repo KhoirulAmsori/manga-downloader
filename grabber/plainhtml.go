@@ -49,6 +49,11 @@ func (m *PlainHTML) Test() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// Test() runs once per candidate site during IdentifySite and never
+	// reaches a Close otherwise: the body stays unread and its connection
+	// never returns to the pool
+	defer body.Close()
+
 	m.doc, err = goquery.NewDocumentFromReader(body)
 	if err != nil {
 		return false, err

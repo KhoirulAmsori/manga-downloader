@@ -5,9 +5,11 @@ package http
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // Params is an interface for request parameters
@@ -47,13 +49,55 @@ func (r RequestParams) GetReferer() string {
 // "Go-http-client" user agent with a 403/500
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 
+// transport is the connection pool every request goes through.
+//
+// A Transport owns the keep-alive connections its responses are handed back
+// to, so it must not be built per request: a fresh pool per request means no
+// reuse at all (a new TCP+TLS connection every time), and the pool each
+// request made is then orphaned while still holding its connection
+// ESTABLISHED — the connection's readLoop goroutine keeps the pool reachable,
+// so the GC never gets the chance to close it. A bulk download is thousands
+// of requests, so connections piled up for the whole run and only went away
+// when the process exited.
+//
+// The knobs that matter for keeping the count visible on a router sane:
+//
+//   - ForceAttemptHTTP2: setting DialContext alone turns HTTP/2 off (Go
+//     conservatively declines it once a custom dialer is present), and h2 is
+//     the biggest single win here — every stream to a host shares one
+//     connection, so a 50-way page download holds one connection per host
+//     instead of one per stream. The per-request transports this replaced got
+//     h2 by accident (no dialer set) and then threw the negotiated
+//     connection away with the pool it came in.
+//   - IdleConnTimeout is what empties the pool once a chapter's last page is
+//     done: zero would keep an idle connection forever, and the default 90s
+//     outlives the burst of requests it was pooled for, leaving it waiting on
+//     the server to close first.
+//   - MaxIdleConnsPerHost is the pool size per host (2 by default, raised to
+//     the page-concurrency ceiling so --concurrency-pages doesn't churn
+//     handshakes).
+//   - Proxy is nil, as it was before this shared the pool: honouring
+//     HTTP_PROXY/HTTPS_PROXY is a separate decision that would silently
+//     reroute downloads for anyone who has those set.
+var transport = &http.Transport{
+	// keep the original behaviour: never transparently gunzip a response body
+	DisableCompression:  true,
+	DialContext:         (&net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+	TLSHandshakeTimeout: 10 * time.Second,
+	IdleConnTimeout:     15 * time.Second,
+	MaxIdleConns:        100,
+	MaxIdleConnsPerHost: 10,
+	// see the note above: without this the DialContext above switches HTTP/2
+	// off and every stream becomes its own connection again
+	ForceAttemptHTTP2: true,
+}
+
+// client is the one HTTP client every request goes through, sharing
+// transport's connection pool
+var client = &http.Client{Transport: transport}
+
 // request sends a request to the given URL
 func request(t string, params Params) (body io.ReadCloser, err error) {
-	tr := &http.Transport{
-		DisableCompression: true,
-	}
-	client := &http.Client{Transport: tr}
-
 	rp, _ := params.(RequestParams)
 
 	var reqBody io.Reader
@@ -91,6 +135,12 @@ func request(t string, params Params) (body io.ReadCloser, err error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		// Do can return a response alongside the error (a redirect policy
+		// that gives up, for one): its body still has to go, or the
+		// connection underneath it never returns to the pool
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
 		return
 	}
 
@@ -106,6 +156,14 @@ func request(t string, params Params) (body io.ReadCloser, err error) {
 	}
 
 	if resp.StatusCode != 200 {
+		// the body must be closed here: on the error path nobody below ever
+		// gets to close it, and an unread body keeps its connection checked
+		// out of the pool for the lifetime of the process. Retries multiply
+		// failed requests, so this path leaked one connection per attempt;
+		// draining it also lets Go reuse the connection instead of tearing
+		// it down.
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 		err = fmt.Errorf("received %d response code", resp.StatusCode)
 		return
 	}
