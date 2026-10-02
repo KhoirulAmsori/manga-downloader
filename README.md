@@ -521,9 +521,13 @@ Run `manga-downloader help` to list them in your terminal.
 - [jestful.net](https://jestful.net)
 - [kappabeast.com](https://kappabeast.com) \*
 - [kaynscans.com (Kayn Scans, former kaynscan.org)](https://kaynscans.com)
+<<<<<<< HEAD
 - [kingofshojo.com](https://kingofshojo.com)
 - [komikindo.ch](https://komikindo.ch)
 - [komikstation.org (Indonesian)](https://komikstation.org)
+=======
+- [komiku.org (Komiku, Indonesian)](https://komiku.org)
+>>>>>>> ebce459 (feat(grabber): add komiku.org)
 - [lagoonscans.com](https://lagoonscans.com)
 - [leercapitulo.co](https://www.leercapitulo.co)
 - [lhtranslation.net (LHTranslation)](https://lhtranslation.net)
