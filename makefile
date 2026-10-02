@@ -62,6 +62,7 @@ grabber: \
 	grabber/inmanga \
 	grabber/jestful \
 	grabber/kaynscan \
+	grabber/komiku \
 	grabber/leercapitulo \
 	grabber/luascans \
 	grabber/mangaball \
@@ -242,6 +243,13 @@ grabber/drakecomic:
 # the old domain still 301s here and the grabber remaps old URLs in code
 grabber/kaynscan:
 	go run . https://kaynscans.com/series/comic/heavenly-demon-cultivation-simulation 191
+# indonesian site, plain http: the whole chapter table (1200+ rows) is already
+# rendered in the series page and the reader renders every page server-side, so
+# no browser and no api. recent chapters serve webp pages, hence the note:
+# pass --convert-images avif,webp when the target e-reader can't show them.
+# 1188 is a couple of releases behind the tip like the other smoke targets
+grabber/komiku:
+	go run . https://komiku.org/manga/komik-one-piece-indo/ 1188
 # hivetoons only server-renders the ~20 newest chapter anchors ("Load more"
 # does the rest client-side), so the grabber reads the full list out of the
 # astro-island blob; use a chapter well behind that window so the smoke run

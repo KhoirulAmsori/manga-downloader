@@ -120,6 +120,7 @@ func (g *Grabber) IdentifySite() (Site, []error) {
 		NewHivetoons(g),
 		NewKaynscan(g),
 		NewHijala(g),
+		NewKomiku(g),
 		NewMangaball(g),
 		NewMangataro(g),
 		NewMangitto(g),
