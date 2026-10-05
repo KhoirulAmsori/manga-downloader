@@ -154,6 +154,7 @@ func Run(cmd *cobra.Command, args []string) {
 		mpb.WithWidth(40),
 		mpb.WithOutput(color.Output),
 		mpb.WithAutoRefresh(),
+		mpb.PopCompletedMode(),
 	)
 
 	// Get terminal width for title truncation
