@@ -37,7 +37,7 @@ current folder.
 
 - **A single binary**: no runtime, no dependencies and no config file. Builds
   are available for Linux, macOS and Windows, plus Docker images.
-- **[84 supported sites](#supported-sites)**, from big aggregators to small
+- **[86 supported sites](#supported-sites)**, from big aggregators to small
   scanlation groups.
 - **Chapter ranges** such as `1,3,5-10`, so you download only what's missing.
 - **E-reader friendly output**: AVIF pages are converted to JPEG automatically,
@@ -53,7 +53,7 @@ current folder.
 ## Supported sites
 
 <details>
-<summary><b>Show all 84 supported sites</b></summary>
+<summary><b>Show all 86 supported sites</b></summary>
 <br>
 
 - [asmotoon.com (Asmodeus Scans)](https://asmotoon.com)
@@ -105,6 +105,7 @@ current folder.
 - [mangalivre.to (Manga Livre, former mangalivre.tv/mangalivre.net)](https://mangalivre.to)
 - [mangapark.page (MangaPark, the only live host: mangapark.to and the other mirrors are dead)](https://mangapark.page) \*
 - [mangapill.com](https://mangapill.com)
+- [mangaplus.shueisha.co.jp (Manga Plus, Shueisha's official reader)](https://mangaplus.shueisha.co.jp)
 - [mangaread.org](https://www.mangaread.org)
 - [mangasushi.org](https://mangasushi.org)
 - [mangataro.org](https://mangataro.org)
@@ -386,6 +387,42 @@ Use `--filename-template` to change file names. It takes a
 
 `{{.Version}}` is a counter that's added when two files would have the same
 name.
+
+### Environment variables
+
+| Variable           | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `MANGAPLUS_SECRET` | Anonymous device secret to use for Manga Plus |
+
+**Manga Plus** answers the complete chapter list only to an app client, which
+authenticates with an anonymous device secret. manga-downloader registers one
+on first use and caches it in `manga-downloader/mangaplus-secret` inside your
+user config folder (`$XDG_CONFIG_HOME` or `~/.config` on Linux,
+`~/Library/Application Support` on macOS, `%AppData%` on Windows): no account is
+ever needed. Secrets are 32 lowercase hexadecimal characters, and anything that
+isn't one is treated as absent — so exporting a malformed `MANGAPLUS_SECRET`,
+or deleting the cached file, makes the next run register a fresh device, as
+does a cached secret the API stops accepting. Export a valid
+`MANGAPLUS_SECRET` to reuse a secret registered elsewhere, such as the one of a
+device with your Manga Plus subscription.
+
+In **Docker**, the cached secret lives inside the container and is lost with
+it, so every run registers a new device. To keep one, either pass it with
+`-e MANGAPLUS_SECRET=...`, or mount your own config folder so the container
+shares the secret of your local install (create the folder first, or Docker
+creates it owned by root):
+
+~~~bash
+mkdir -p ~/.config/manga-downloader
+docker run --rm -it -v "$PWD:/downloads" \
+    -v ~/.config/manga-downloader:/home/manga/.config/manga-downloader \
+    elboletaire/manga-downloader [url] [chapters]
+~~~
+
+Manga Plus also publishes **one edition per language**, and their chapter
+lists differ: some list the whole series, others only a handful of chapters.
+A URL points at one edition, and `--language` downloads another one instead
+(`--language en` on a Spanish URL downloads the English edition).
 
 ### Options
 

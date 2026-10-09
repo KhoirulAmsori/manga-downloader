@@ -74,6 +74,7 @@ grabber: \
 	grabber/mangak \
 	grabber/mangalib \
 	grabber/mangalivre \
+	grabber/mangaplus \
 	grabber/mangasushi \
 	grabber/mangataro \
 	grabber/mangitto \
@@ -135,6 +136,11 @@ grabber/mangalib:
 	go run . https://mangalib.me/ru/manga/206--one-piece 1188
 grabber/mangadenizi:
 	go run . https://www.mangadenizi.net/manga/one-piece 1188
+
+# Manga Plus talks to the app API, which rate limits hard (see AGENTS.md).
+# Any chapter of this series is free; an old one keeps the target stable.
+grabber/mangaplus:
+	go run . https://mangaplus.shueisha.co.jp/titles/100274 67
 
 grabber/qimanga:
 	go run . https://qimanga.com/series/4190634673-eleceed 2
@@ -263,7 +269,7 @@ grabber/mangataro:
 grabber/roliascan:
 	go run . https://roliascan.com/manga/no-marriage/ 77
 grabber/sacachispa:
-	go run . https://sacachispa.site/series/boku-no-seito-wa-otona-gal 14
+	go run . https://sacachispa.site/manga/3ba3f7c1-4655-488f-87c5-bf1d797007c1/tsutte-tabetai-gal-sawa-san 19
 grabber/teamshadowi:
 	go run . https://www.team-shadowi.com/series/the-regressed-mercenary-has-a-plan 98
 grabber/taiyo:
