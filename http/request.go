@@ -49,7 +49,6 @@ func (r RequestParams) GetReferer() string {
 // "Go-http-client" user agent with a 403/500
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 
-<<<<<<< HEAD
 // StatusError is returned for a response whose status isn't 200
 type StatusError struct {
 	Code int
@@ -58,7 +57,7 @@ type StatusError struct {
 func (e *StatusError) Error() string {
 	return fmt.Sprintf("received %d response code", e.Code)
 }
-=======
+
 // transport is the connection pool every request goes through.
 //
 // A Transport owns the keep-alive connections its responses are handed back
@@ -105,7 +104,6 @@ var transport = &http.Transport{
 // client is the one HTTP client every request goes through, sharing
 // transport's connection pool
 var client = &http.Client{Transport: transport}
->>>>>>> e9d862c (fix(http): share one connection pool instead of one per request)
 
 // request sends a request to the given URL
 func request(t string, params Params) (body io.ReadCloser, err error) {
@@ -167,9 +165,7 @@ func request(t string, params Params) (body io.ReadCloser, err error) {
 	}
 
 	if resp.StatusCode != 200 {
-<<<<<<< HEAD
 		err = &StatusError{Code: resp.StatusCode}
-=======
 		// the body must be closed here: on the error path nobody below ever
 		// gets to close it, and an unread body keeps its connection checked
 		// out of the pool for the lifetime of the process. Retries multiply
@@ -179,7 +175,6 @@ func request(t string, params Params) (body io.ReadCloser, err error) {
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 		err = fmt.Errorf("received %d response code", resp.StatusCode)
->>>>>>> e9d862c (fix(http): share one connection pool instead of one per request)
 		return
 	}
 
